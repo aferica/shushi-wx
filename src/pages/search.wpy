@@ -1,0 +1,132 @@
+<style lang="less">
+  .search-wrap {
+    display: flex;
+    align-items: center;
+    width: 750rpx;
+    height: 90rpx;
+    color: #fff;
+    background: #f6f6f6;
+  }
+  .search {
+    flex: 1;
+    margin-left: 24rpx;
+  }
+  .label {
+    margin-left: 20rpx;
+  }
+</style>
+<template>
+  <view class="container">
+    <view class="search-wrap">
+      <wxc-search class="search" showClear="{{false}}" button="搜索"
+        bg-color="#fff" color="#000" icon-color="#707070" ph-color="#707070" btn-color="#2CB42F"
+        placeholder="书名/作者/分类" @confirm="submitSearch">
+      </wxc-search>
+    </view>
+    <view>
+      <wxc-loading is-show="{{isLoading}}"></wxc-loading>
+      <wxc-abnor wx:if="{{!firstIn && !hasBooks}}" type="SEARCH"></wxc-abnor>
+      <view wx:if="{{!firstIn && hasBooks}}">
+        <wxc-panel>
+          <repeat for="{{suggest}}" index="ind" item="sug">
+            <wxc-list wx:if="{{sug.tag != 'bookname'}}" title="{{sug.text}}" arrow="{{false}}" @tap="gotoSuggest({{sug}})">
+              <wxc-label wx:if="{{sug.tag == 'cat'}}" class="label" type="fill" type-color="#ff7777">分类</wxc-label>
+              <wxc-label wx:if="{{sug.tag == 'tag'}}" class="label" type="fill" type-color="#4bbb8b">标签</wxc-label>
+              <wxc-label wx:if="{{sug.tag == 'bookauthor'}}" class="label" type="fill" type-color="#fa8f4d">作者</wxc-label>
+              <wxc-label wx:if="{{sug.gender == 'male'}}" class="label" type="fill" type-color="#90aeff">男频</wxc-label>
+              <wxc-label wx:if="{{sug.gender == 'female'}}" class="label" type="fill" type-color="#8a79af">女频</wxc-label>
+            </wxc-list>
+          </repeat>
+        </wxc-panel>
+        <wxc-panel>
+          <repeat for="{{dataList}}" index="index" item="item">
+            <BookItem :itemValue.sync="item"></BookItem>
+          </repeat>
+        </wxc-panel>
+        <wxc-loadmore is-end="{{true}}" text="我是有底线的"></wxc-loadmore>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import Api from '../util/api.js'
+  import BookItem from '../components/BookItem'
+
+  export default class Search extends wepy.page {
+    config = {
+      navigationBarTitleText: '搜索',
+      usingComponents: {
+        'wxc-list': '../../npm/@minui/wxc-list/dist/index',
+        'wxc-panel': '../../npm/@minui/wxc-panel/dist/index',
+        'wxc-search': '../../npm/@minui/wxc-search/dist/index',
+        'wxc-abnor': '../../npm/@minui/wxc-abnor/dist/index',
+        'wxc-loadmore': '../../npm/@minui/wxc-loadmore/dist/index',
+        'wxc-label': '../../npm/@minui/wxc-label/dist/index',
+        'wxc-loading': '../../npm/@minui/wxc-loading/dist/index'
+      }
+    }
+    components = {
+      BookItem
+    }
+
+    data = {
+      isLoading: false,
+      dataList: [],
+      firstIn: true,
+      hasBooks: false,
+      suggest: []
+    }
+
+    methods = {
+      gotoSuggest: function (sug) {
+
+      },
+      submitSearch: function (e) {
+        console.log(e.detail.value)
+        this.isLoading = true
+
+        const url1 = Api.host + Api.noEncode + Api.book.bookSuggest + '?query=' + e.detail.value
+        console.log(url1)
+        wepy.request({
+            url: url1
+        }).then(res => {
+          if(res.data.ok ) {
+            this.suggest = res.data.keywords
+            this.$apply()
+          } else {
+            wepy.showToast({
+              title: '服务器发生错误，请稍后重试',
+              icon: 'none',
+              duration: 2000
+            });
+          }
+        })
+
+        const url2 = Api.host + Api.noEncode + Api.book.bookSearch + '?query=' + e.detail.value
+        wepy.request({
+            url: url2
+        }).then(res => {
+          if(res.data.ok ) {
+            this.firstIn = false
+            this.dataList = res.data.books
+            this.hasBooks = res.data.books.length > 0
+            this.isLoading = false
+            this.$apply()
+          } else {
+            wepy.showToast({
+              title: '服务器发生错误，请稍后重试',
+              icon: 'none',
+              duration: 2000
+            });
+          }
+        })
+      }
+    }
+
+    onLoad() {
+      let self = this
+    }
+  }
+</script>

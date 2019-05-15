@@ -1,0 +1,179 @@
+<style lang="less">
+  .label {
+    margin-left: 20rpx;
+  }
+
+  .book-type-min {
+    width:750rpx;
+    font-size:30rpx;
+    height:80rpx;
+    display: -webkit-box;
+    overflow-x: scroll;
+    -webkit-overflow-scrolling:touch;
+    background-color:#ffffff;
+    border-bottom: 2rpx solid #ececec;
+  }
+  .book-type-min-item {
+    padding: 0 0 0 20rpx;
+    line-height: 80rpx;
+    font-size:24rpx;
+  }
+  .book-type-min-select-item {
+    color: #b93321;
+  }
+  .select-box {
+    position:fixed;
+    height:160rpx;
+    top:0;
+    width:750rpx;
+    z-index:10;
+  }
+  // .content-box {
+  //   padding-top: 160rpx;
+  // }
+</style>
+<template>
+  <view class="container">
+    <view class="select-box">
+      <view class="book-type-min">
+        <repeat for="{{types}}" index="index" item="item">
+          <view class="book-type-min-item {{item.value == type || item.value == gender ? 'book-type-min-select-item' : ''}}"
+            @tap="selectType({{item}})">{{item.name}}</view>
+        </repeat>
+      </view>
+      <view wx:if="{{mins.length > 1}}" class="book-type-min" >
+        <repeat for="{{mins}}" index="index" item="item">
+          <view class="book-type-min-item {{item == duration ? 'book-type-min-select-item' : ''}}"
+            @tap="selectMin({{item}})">{{item}}</view>
+        </repeat>
+      </view>
+    </view>
+    <view class="content-box" style="{{mins.length > 1 ? 'padding-top: 160rpx;' : 'padding-top: 80rpx;'}}">
+      <wxc-loading is-show="{{isLoading}}"></wxc-loading>
+      <wxc-abnor wx:if="{{errorRe}}" type="REQUEST_ERROR"
+        @abnortap="onAbnorTap"></wxc-abnor>
+      <wxc-abnor wx:if="{{!firstIn && !hasBooks}}" type="DATA"></wxc-abnor>
+      <wxc-panel>
+        <repeat for="{{dataList}}" index="index" item="item">
+          <BookListItem :itemValue.sync="item"></BookListItem>
+        </repeat>
+      </wxc-panel>
+      <wxc-loadmore wx:if="{{!firstIn && dataList.length > 0}}"></wxc-loadmore>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import Api from '../util/api.js'
+  import BookListItem from '../components/BookListItem'
+
+  export default class BookList extends wepy.page {
+    config = {
+      navigationBarTitleText: '精彩书单',
+      usingComponents: {
+        'wxc-tab': '../../npm/@minui/wxc-tab/dist/index',
+        'wxc-tab-panel': '../../npm/@minui/wxc-tab/dist/panel',
+        'wxc-panel': '../../npm/@minui/wxc-panel/dist/index',
+        'wxc-abnor': '../../npm/@minui/wxc-abnor/dist/index',
+        'wxc-loadmore': '../../npm/@minui/wxc-loadmore/dist/index',
+        'wxc-loading': '../../npm/@minui/wxc-loading/dist/index',
+        'wxc-label': '../../npm/@minui/wxc-label/dist/index',
+      }
+    }
+    components = {
+      BookListItem
+    }
+
+    data = {
+      isLoading: true,
+      errorRe: false,
+      dataList: [],
+      firstIn: true,
+      hasBooks: false,
+      showTab: false,
+      sort: 'collectorCount',
+      start: 0,
+      gender: 'male',
+      duration: 'last-seven-days',
+      type: '1',
+      types: [{name:'本周最热', value:'1'},{name:'最新发布', value:'2'},{name:'最多收藏', value:'3'},
+        {name:'男生', value: 'male'},{name:'女生', value:'female'}],
+      mins: []
+    }
+
+    methods = {
+      selectType: function (type) {
+        if(type.value == '1' ) {
+          this.sort = 'collectorCount'
+          this.duration = 'last-seven-days'
+          this.type = type.value
+        } else if(type.value == '2' ) {
+          this.sort = 'created'
+          this.duration = 'all'
+          this.type = type.value
+        } else if(type.value == '3' ) {
+          this.sort = 'collectorCount'
+          this.duration = 'all'
+          this.type = type.value
+        } else {
+          this.gender = type.value
+        }
+
+        this.start = 0
+        this.dataList = []
+        this.getBookLists()
+      },
+      selectMin: function (min) {
+        this.duration = min
+        this.start = 0
+        this.dataList = []
+        this.getBookLists()
+      },
+      onAbnorTap: function () {
+        this.getBookLists()
+      },
+      scrollToTop: function () {
+        wepy.pageScrollTo({
+          scrollTop: 0
+        })
+      }
+    }
+
+    getBookLists() {
+      this.isLoading = true
+      let duration = this.duration
+      let url = Api.host + Api.noEncode + Api.bookList.lists
+        + encodeURIComponent('?sort=' + this.sort + '&duration=' + duration
+        + '&start=' + this.start + '&gender=' + this.gender)
+      wepy.request({
+          url: url
+      }).then(res => {
+        console.log(res)
+        if(res.data.ok ) {
+          this.dataList = this.dataList.concat(res.data.bookLists)
+          this.hasBooks = this.dataList.length > 0
+          this.start = this.dataList.length
+          this.isLoading = false
+          this.firstIn = false
+          this.$apply()
+        } else {
+          this.firstIn = false
+          this.isLoading = false
+          this.errorRe = true
+          this.$apply()
+        }
+      })
+    }
+
+    onReachBottom(event) {
+      //请求更多数据
+      this.getBookLists()
+    }
+
+    onLoad(options) {
+      console.log(options)
+      this.getBookLists()
+    }
+  }
+</script>

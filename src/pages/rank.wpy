@@ -1,0 +1,123 @@
+<style lang="less">
+
+</style>
+<template>
+  <view class="container">
+    <wxc-loading is-show="{{isLoading}}"></wxc-loading>
+    <wxc-abnor wx:if="{{errorRe}}" type="REQUEST_ERROR"
+      bind:abnortap="onAbnorTap"></wxc-abnor>
+    <wxc-tab
+      wx:if="{{!isLoading && !errorRe}}"
+      default-index="{{0}}"
+      animate="{{true}}"
+    >
+      <wxc-tab-panel tab-index="{{0}}" label="男生" >
+        <wxc-panel wx:if="{{hasMale}}" title="追书排行榜">
+          <repeat for="{{maleList}}" index="ind" item="rank">
+            <wxc-list wx:if="{{!rank.collapse}}" class="item" src="{{staticUrl + rank.cover}}"
+              title="{{rank.shortTitle}}" @tap="gotoRankDetail({{rank}})"></wxc-list>
+          </repeat>
+        </wxc-panel>
+        <wxc-panel wx:if="{{hasMale}}" title="其它排行榜">
+          <repeat for="{{maleList}}" index="ind" item="rank">
+            <wxc-list wx:if="{{rank.collapse}}" class="item" src="/images/more.png"
+              title="{{rank.shortTitle}}" @tap="gotoRankDetail({{rank}})"></wxc-list>
+          </repeat>
+        </wxc-panel>
+        <wxc-abnor wx:if="{{!hasMale}}" type="DATA" ></wxc-abnor>
+      </wxc-tab-panel>
+      <wxc-tab-panel tab-index="{{1}}" label="女生" >
+        <wxc-panel wx:if="{{hasFemale}}" title="追书排行榜">
+          <repeat for="{{femaleList}}" index="ind" item="rank">
+            <wxc-list wx:if="{{!rank.collapse}}" class="item" src="{{staticUrl + rank.cover}}"
+              title="{{rank.shortTitle}}" @tap="gotoRankDetail({{rank}})"></wxc-list>
+          </repeat>
+        </wxc-panel>
+        <wxc-panel wx:if="{{hasFemale}}" title="其它排行榜">
+          <repeat for="{{femaleList}}" index="ind" item="rank">
+            <wxc-list wx:if="{{rank.collapse}}" class="item" src="/images/more.png"
+              title="{{rank.shortTitle}}" @tap="gotoRankDetail({{rank}})"></wxc-list>
+          </repeat>
+        </wxc-panel>
+        <wxc-abnor wx:if="{{!hasFemale}}" type="DATA" ></wxc-abnor>
+      </wxc-tab-panel>
+    </wxc-tab>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import Api from '../util/api.js'
+
+  export default class Rank extends wepy.page {
+    config = {
+      navigationBarTitleText: '排行榜',
+      usingComponents: {
+        'wxc-list': '../../npm/@minui/wxc-list/dist/index',
+        'wxc-panel': '../../npm/@minui/wxc-panel/dist/index',
+        'wxc-tab': '../../npm/@minui/wxc-tab/dist/index',
+        'wxc-tab-panel': '../../npm/@minui/wxc-tab/dist/panel',
+        'wxc-abnor': '../../npm/@minui/wxc-abnor/dist/index',
+        'wxc-loading': '../../npm/@minui/wxc-loading/dist/index'
+      }
+    }
+    components = {
+    }
+
+    data = {
+      isLoading: true,
+      errorRe: false,
+      staticUrl: 'http://statics.zhuishushenqi.com',
+      maleList: [],
+      hasMale: true,
+      femaleList: [],
+      hasFemale: true,
+    }
+
+    methods = {
+      gotoRankDetail: function (rank) {
+        console.log(rank)
+        let other = '&mt='
+        if(!rank.collapse && rank.monthRank && rank.totalRank) {
+          other += '1&mon=' + rank.monthRank + '&tot=' + rank.totalRank
+        } else {
+          other += '0'
+        }
+        wepy.navigateTo({
+          url: 'rankDetail?id=' + rank._id + '&title=' + rank.shortTitle + other
+        })
+      },
+      onAbnorTap: function () {
+        this.getRankDetailById()
+      },
+    }
+
+    getBookRank() {
+      const url = Api.host + Api.noEncode + Api.rank.rankCategory
+
+      wepy.request({
+        url: url
+      }).then(res => {
+        console.log(res)
+        if(res.data.ok) {
+          this.maleList = res.data.male
+          this.femaleList = res.data.female
+          this.hasMale = res.data.male.length > 0
+          this.hasFemale = res.data.female.length > 0
+          this.errorRe = false
+          this.isLoading = false
+          this.$apply()
+        } else {
+          this.isLoading = false
+          this.errorRe = true
+          this.$apply()
+        }
+      })
+    }
+
+    onLoad() {
+      let self = this
+      this.getBookRank()
+    }
+  }
+</script>

@@ -1,0 +1,82 @@
+<style lang="less">
+  .comment-wrap {
+    display: flex;
+    min-height: 150rpx;
+    background: #ffffff;
+  }
+  .comment-item {
+    text-align: left;
+  }
+  .comment-side {
+    width: 100rpx;
+    flex-grow: 0;
+    padding: 40rpx 10rpx 0 10rpx;
+  }
+  .comment-avatar {
+    display: block;
+    width: 80rpx;
+    height: 80rpx;
+  }
+  .comment-main {
+    width: 650rpx;
+    margin: 40rpx 0;
+  }
+  .comment-author {
+    font-size: 28rpx;
+    color: #aa530e;
+  }
+  .comment-name {
+    font-size: 28rpx;
+    color: #111111;
+    line-height: 60rpx;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .comment-detail {
+    color: #707070;
+    font-size: 24rpx;
+    line-height: 40rpx;
+    max-height: 750rpx;
+  }
+</style>
+<template>
+  <wxc-panel border="{{false}}" margin="{{false}}" @tap="viewCommentItem">
+    <wxc-flex class="comment-wrap">
+      <view class="comment-item comment-side">
+        <wxc-avatar class="comment-avatar" src="{{staticUrl + itemValue.author.avatar}}"></wxc-avatar>
+      </view>
+      <view class="comment-item comment-main">
+        <view class="comment-author">{{itemValue.author.nickname}}  lv{{itemValue.author.lv}}  </view>
+        <view  wx:if="{{itemValue.title != null}}" class="comment-name">{{itemValue.title}}</view>
+        <wxc-rate value="{{itemValue.rating}}" readonly="{{true}}" size="28"></wxc-rate>
+        <view class="comment-detail">
+          <text space="ensp">{{itemValue.content}}</text>
+        </view>
+      </view>
+    </wxc-flex>
+  </wxc-panel>
+</template>
+<script>
+  import wepy from 'wepy'
+
+  export default class CommentItem extends wepy.component {
+
+    props = {
+      itemValue: Object,
+    }
+
+    data = {
+      staticUrl: 'http://statics.zhuishushenqi.com',
+    }
+
+    methods = {
+      viewCommentItem: function() {
+        console.log(this.itemValue)
+        // wepy.navigateTo({
+        //   url: '../salary/salaryInfo?id=' + this.itemValue.id,
+        // })
+      }
+    }
+  }
+</script>

@@ -1,0 +1,108 @@
+<style lang="less">
+  .book-detail-wrap {
+    display: flex;
+    height: 180rpx;
+    background: #ffffff;
+    box-sizing: border-box;
+    border-bottom: 1rpx solid #ececec;
+  }
+  .book-detail-item {
+    font-size: 20rpx;
+    text-align: left;
+  }
+  .book-detail-side {
+    width: 150rpx;
+    flex-grow: 0;
+  }
+  .book-detail-main {
+    width: 600rpx;
+    margin: 14rpx 20rpx 20rpx 0;
+  }
+  .book-detail-cover {
+    padding: 20rpx 20rpx 20rpx 30rpx;
+    width: 100rpx;
+    height: 140rpx;
+  }
+  .book-detail-name {
+    font-size: 28rpx;
+    line-height: 44rpx;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .book-detail-author {
+    color: #999999;
+    font-size: 24rpx;
+    line-height: 40rpx;
+  }
+  .label {
+    margin-left: 20rpx;
+  }
+  .book-detail-short-intro {
+    color: #999999;
+    font-size: 24rpx;
+    line-height: 36rpx;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .book-detail-detail {
+    color: #999999;
+    font-size: 24rpx;
+    line-height: 36rpx;
+  }
+  .import-font {
+    color: #ce2525;
+  }
+</style>
+<template>
+  <wxc-panel border="{{false}}" margin="{{false}}" @tap="viewBookInfo">
+    <view class="book-detail-wrap">
+      <view class="book-detail-item book-detail-side">
+        <image class="book-detail-cover"  src="{{staticUrl  + itemValue.cover}}" />
+      </view>
+      <view class="book-detail-item book-detail-main">
+        <view class="book-detail-name">{{itemValue.title}}</view>
+        <view class="book-detail-author">
+          <text space="ensp">{{itemValue.author}}</text>
+          <wxc-label class="label" type="fill" type-color="#ff7777">{{itemValue.majorCate}}</wxc-label>
+          <wxc-label wx:if="{{itemValue.minorCate!= ''}}" class="label" type="fill" type-color="#4bbb8b">{{itemValue.minorCate}}</wxc-label>
+        </view>
+        <view>
+          <view class="book-detail-short-intro">
+            {{itemValue.shortIntro !=null ? itemValue.shortIntro : itemValue.longIntro}}
+          </view>
+        </view>
+        <view class="book-detail-detail">
+          <text class="import-font">{{itemValue.latelyFollower != null ? itemValue.latelyFollower : 0}}</text>
+          <text space="ensp">人气  |  </text>
+          <text class="import-font">{{itemValue.retentionRatio != null ? itemValue.retentionRatio : 0}}</text>
+          <text space="ensp">%读者留存</text>
+        </view>
+      </view>
+    </view>
+  </wxc-panel>
+</template>
+<script>
+  import wepy from 'wepy'
+
+  export default class BookDetail extends wepy.component {
+
+    props = {
+      itemValue: Object
+    }
+
+    data = {
+      staticUrl: 'http://statics.zhuishushenqi.com',
+    }
+
+    methods = {
+      viewBookInfo: function() {
+        console.log(this.itemValue)
+        wepy.navigateTo({
+          url: './bookInfo?id=' + this.itemValue._id + '&title=' + this.itemValue.title,
+        })
+      }
+    }
+  }
+</script>

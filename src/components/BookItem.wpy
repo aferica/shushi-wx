@@ -1,0 +1,78 @@
+<style lang="less">
+  .wrap {
+    display: flex;
+    height: 180rpx;
+    background: #ffffff;
+    box-sizing: border-box;
+    border-bottom: 1rpx solid #ececec;
+  }
+  .item {
+    font-size: 20rpx;
+    text-align: left;
+  }
+  .side {
+    width: 150rpx;
+    flex-grow: 0;
+  }
+  .main {
+    width: 600rpx;
+    margin: 40rpx 0;
+  }
+  .book-cover {
+    padding: 20rpx 20rpx 20rpx 30rpx;
+    width: 100rpx;
+    height: 140rpx;
+  }
+  .book-name {
+    font-size: 30rpx;
+    line-height: 60rpx;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .book-detail {
+    color: #707070;
+    font-size: 22rpx;
+    line-height: 40rpx;
+  }
+</style>
+<template>
+  <wxc-panel border="{{false}}" margin="{{false}}" @tap="viewBookInfo">
+    <wxc-flex class="wrap">
+      <view class="item side">
+        <image class="book-cover"  src="{{staticUrl  + itemValue.cover}}" />
+      </view>
+      <view class="item main">
+        <view class="book-name">{{itemValue.title}}</view>
+        <view class="book-detail">
+          <text space="ensp">{{itemValue.latelyFollower != null ? itemValue.latelyFollower : 0}}人气  |  </text>
+          <text space="ensp">{{itemValue.retentionRatio != null ? itemValue.retentionRatio : 0}}%读者留存  |  </text>
+          <text>{{itemValue.author}}著</text>
+        </view>
+      </view>
+    </wxc-flex>
+  </wxc-panel>
+</template>
+<script>
+  import wepy from 'wepy'
+
+  export default class BookItem extends wepy.component {
+
+    props = {
+      itemValue: Object
+    }
+
+    data = {
+      staticUrl: 'http://statics.zhuishushenqi.com',
+    }
+
+    methods = {
+      viewBookInfo: function() {
+        console.log(this.itemValue)
+        wepy.navigateTo({
+          url: './bookInfo?id=' + this.itemValue._id + '&title=' + this.itemValue.title,
+        })
+      }
+    }
+  }
+</script>

@@ -1,0 +1,104 @@
+<style lang="less">
+  .book-list-wrap {
+    display: flex;
+    height: 180rpx;
+    background: #ffffff;
+    box-sizing: border-box;
+    border-bottom: 1rpx solid #ececec;
+  }
+  .book-list-item {
+    font-size: 20rpx;
+    text-align: left;
+  }
+  .book-list-side {
+    width: 150rpx;
+    flex-grow: 0;
+  }
+  .book-list-main {
+    width: 600rpx;
+    margin: 14rpx 20rpx 20rpx 0;
+  }
+  .book-list-cover {
+    padding: 20rpx 20rpx 20rpx 30rpx;
+    width: 100rpx;
+    height: 140rpx;
+  }
+  .book-list-name {
+    font-size: 28rpx;
+    line-height: 44rpx;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .book-list-author {
+    color: #999999;
+    font-size: 24rpx;
+    line-height: 40rpx;
+  }
+  .label {
+    margin-left: 20rpx;
+  }
+  .book-list-short-intro {
+    color: #999999;
+    font-size: 24rpx;
+    line-height: 36rpx;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .book-list-detail {
+    color: #999999;
+    font-size: 24rpx;
+    line-height: 36rpx;
+  }
+  .import-font {
+    color: #ce2525;
+  }
+</style>
+<template>
+  <wxc-panel border="{{false}}" margin="{{false}}" @tap="viewBookInfo">
+    <view class="book-list-wrap">
+      <view class="book-list-item book-list-side">
+        <image class="book-list-cover"  src="{{staticUrl  + itemValue.cover}}" />
+      </view>
+      <view class="book-list-item book-list-main">
+        <view class="book-list-name">{{itemValue.title}}</view>
+        <view class="book-list-author">
+          <text space="ensp">{{itemValue.author}}</text>
+        </view>
+        <view>
+          <view class="book-list-short-intro">{{itemValue.desc}}</view>
+        </view>
+        <view class="book-list-detail">
+          <text class="import-font">共{{itemValue.bookCount != null ? itemValue.bookCount : 0}}</text>
+          <text space="ensp">人气  |  </text>
+          <text class="import-font">{{itemValue.collectorCount != null ? itemValue.collectorCount : 0}}</text>
+          <text space="ensp">人收藏</text>
+        </view>
+      </view>
+    </view>
+  </wxc-panel>
+</template>
+<script>
+  import wepy from 'wepy'
+
+  export default class BookListItem extends wepy.component {
+
+    props = {
+      itemValue: Object
+    }
+
+    data = {
+      staticUrl: 'http://statics.zhuishushenqi.com',
+    }
+
+    methods = {
+      viewBookInfo: function() {
+        console.log(this.itemValue)
+        wepy.navigateTo({
+          url: './bookListDetail?id=' + this.itemValue._id + '&title=' + this.itemValue.title,
+        })
+      }
+    }
+  }
+</script>

@@ -1,0 +1,186 @@
+<style>
+.item {
+  padding:20rpx;
+  font-size:28rpx;
+  border-bottom:2rpx solid #eeeeee;
+  font-weight:300;
+}
+.contact-info {
+  height:100vh;
+  background-color: #ffffff;
+  overflow-y: auto;
+}
+.title-and-sort {
+  color: #cc3333;
+  padding: 5rpx 0 5rpx 20rpx;
+  position: fixed;
+  height: 60rpx;
+  top: 0;
+  left: 0;
+  width: 750rpx;
+  z-index: 100;
+  display: flex;
+  background-color: #ffffff;
+  border-bottom:2rpx #eee solid;
+}
+.bottom-button-box {
+  padding: 10rpx 6rpx;
+  position: fixed;
+  height: 80rpx;
+  bottom: 0;
+  left: 0;
+  width: 750rpx;
+  z-index: 100;
+  display: flex;
+  background-color: #ffffff;
+  border-top: 2rpx solid #eeeeee;
+}
+.bottom-button {
+  padding: 10rpx 35rpx;
+}
+.contact-detail {
+  padding: 70rpx 6rpx 90rpx 10rpx;
+  /* position: fixed;
+  top: 70rpx;
+  left: 80; */
+  /* height: 100vh; */
+  width: 750rpx;
+  background-color: #ffffff;
+  min-height: 100vh;
+  /* overflow-y: auto; */
+}
+.book-title {
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  width:500rpx;
+}
+.title-button {
+  padding-left: 10rpx;
+}
+.chapter-info-box {
+  height:100vh;
+}
+</style>
+<template>
+  <wxc-abnor
+    wx:if="{{books.length == 0}}"
+    type="DATA"
+  ></wxc-abnor>
+  <view id="contact-page">
+    <view class="title-and-sort">
+      <view class="book-title">{{title}}</view>
+      <!-- <wxc-button plain="{{true}}" size="small" type="{{sortWay == 1 ? 'primary' : 'success'}}"
+      value="正序" class="title-button"></wxc-button>
+      <wxc-button plain="{{true}}" size="small" type="{{sortWay == 0 ? 'primary' : 'success'}}"
+      value="倒序" class="title-button"></wxc-button> -->
+    </view>
+    <view class="contact-detail">
+      <repeat for="{{showChapter}}" index="index" item="item">
+        <view class="item" @tap="selectThisChapter({{item.index}})"
+          style="{{item.index == selectChapter ? 'background-color: #2b85e4;color: #fff;' : ''}}">{{item.title}}</view>
+      </repeat>
+    </view>
+    <view class="bottom-button-box">
+      <wxc-button class="bottom-button" plain="{{true}}" size="normal" value="上一页" @tap="readLastContact"
+        type="{{pageNo == 1 ? 'disabled' : 'danger'}}" ></wxc-button>
+      <picker class="bottom-button" range="{{pickerSel}}" @change="selectContactPage" value="{{pageNo - 1}}">
+        <wxc-button class="picker">
+          第{{pageNo}}页 <wxc-icon color="#000000" type="arrow-down"></wxc-icon>
+        </wxc-button>
+      </picker>
+      <wxc-button class="bottom-button" plain="{{true}}" size="normal" value="下一页" @tap="readNextContact"
+        type="{{pageNo == page ? 'disabled' : 'success'}}" ></wxc-button>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+
+  export default class BookContact extends wepy.page {
+    config = {
+      navigationBarTitleText: '目录',
+      usingComponents: {
+        'wxc-list': '../../npm/@minui/wxc-list/dist/index',
+        'wxc-panel': '../../npm/@minui/wxc-panel/dist/index',
+        'wxc-abnor': '../../npm/@minui/wxc-abnor/dist/index',
+        'wxc-toast': '../../npm/@minui/wxc-toast/dist/index',
+        'wxc-button': '../../npm/@minui/wxc-button/dist/index',
+        'wxc-icon': '../../npm/@minui/wxc-icon/dist/index',
+      }
+    }
+    components = {
+    }
+
+    data = {
+      chapters: [],
+      showChapter: [],
+      title: '',
+      pageNo: 1,
+      selectChapter: 0,
+      sortWay: 1,
+      page: 0,
+      scrolTop: 0,
+      pickerSel: []
+    }
+    methods = {
+      readLastContact: function () {
+        if(this.pageNo == 0) {
+          return
+        }
+        this.pageNo = this.pageNo - 1
+        this.showChapter = this.chapters.slice((this.pageNo - 1) * 50, this.pageNo * 50)
+        this.pageScrollToTop()
+        this.$apply()
+      },
+      readNextContact: function () {
+        if(this.pageNo == this.page) {
+          return
+        }
+        this.pageNo = this.pageNo + 1
+        this.showChapter = this.chapters.slice((this.pageNo - 1) * 50, this.pageNo * 50)
+        this.pageScrollToTop()
+        this.$apply()
+      },
+      selectContactPage: function (e) {
+        this.pageNo = parseInt(e.detail.value) + 1
+        this.showChapter = this.chapters.slice((this.pageNo - 1) * 50, this.pageNo * 50)
+        this.pageScrollToTop()
+        this.$apply()
+      },
+      selectThisChapter: function (index) {
+        let pages = getCurrentPages();
+        let prePage = pages[pages.length - 2];
+        this.$parent.$pages[`/${prePage.route}`].chapterNo = parseInt(index);
+        this.$parent.$pages[`/${prePage.route}`].getChapterContont();
+        this.$parent.$pages[`/${prePage.route}`].$apply();
+        wepy.navigateBack({
+          delta: 1
+        })
+      }
+    }
+
+    pageScrollToTop() {
+      wx.createSelectorQuery().select('#contact-page').boundingClientRect(function(rect){
+        // 使页面滚动到底部
+        wx.pageScrollTo({
+          scrollTop: 0,
+          duration: 0
+        })
+      }).exec()
+    }
+
+    onLoad(options) {
+      this.title = options.title
+      this.selectChapter =  parseInt(options.sc)
+      this.pageNo = Math.floor(this.selectChapter / 50) + 1
+      this.chapters = this.$parent.globalData.chapters
+      this.page = Math.ceil(this.chapters.length / 50)
+      this.showChapter = this.chapters.slice((this.pageNo - 1) * 50, this.pageNo * 50)
+      for(let i = 1; i <= this.page; i++) {
+        this.pickerSel[i - 1] = '第' + i + '页'
+      }
+    }
+  }
+</script>

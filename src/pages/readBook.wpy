@@ -1,0 +1,321 @@
+<style lang="less">
+.chapter-info-box {
+  height:100vh;
+}
+.chapter-content {
+  line-height: 50rpx;
+  margin: 40rpx 20rpx;
+  font-weight: 300;
+  padding-bottom:90rpx;
+}
+.container-bg {
+  min-height: 100vh;
+}
+.chapter-title {
+  margin: 20rpx 20rpx;
+  border-bottom: #000 4rpx solid;
+}
+.bottom-button-box {
+  padding: 10rpx 6rpx;
+  height: 80rpx;
+  bottom: 0;
+  left: 0;
+  width: 750rpx;
+  z-index: 100;
+  display: flex;
+}
+.bottom-button {
+  padding: 7rpx 3rpx;
+}
+.popup__content {
+  width: 100%;
+  height: 300rpx;
+  background: #333333;
+  text-align: center;
+}
+.setting-item {
+  display: flex;
+  height: 100rpx;
+  width: 710rpx;
+  line-height: 100rpx;
+  font-size: 32rpx;
+  color: #ffffff;
+  padding-left: 20rpx;
+  padding-right: 20rpx;
+}
+.setting-item-title {
+  width: 210rpx;
+  text-align: left;
+}
+.setting-item-info {
+  width: 500rpx;
+}
+.setting-button {
+  padding-left: 20rpx;
+}
+</style>
+<template>
+  <view class="container-bg" style="background-color:{{personSetting.bgColor}};">
+    <wxc-abnor  wx:if="{{loadError}}" type="REQUEST_ERROR"
+      button="刷新"
+      bind:abnortap="onAbnorTap"></wxc-abnor>
+    <wxc-loading is-show="{{isLoading}}"></wxc-loading>
+    <scroll-view scroll-y class="chapter-info-box" wx:if="{{!isLoading && !loadError}}" scroll-top="{{scrolTop}}">
+      <view class="chapter-title">
+        <text>{{chapterTitle}}</text>
+      </view>
+      <view class="chapter-content" style="font-size: {{personSetting.fontSize}}rpx;">
+        <text>{{chapterContent}}</text>
+      </view>
+      <view class="bottom-button-box" style="background-color:{{personSetting.bgColor}}; {{personSetting.position == 'fixed'? 'position: fixed': ''}}">
+        <wxc-button class="bottom-button" plain="{{true}}" size="normal" type="danger" value="上一章" @tap="readLastChapter"></wxc-button>
+        <wxc-button class="bottom-button" plain="{{true}}" size="normal" type="secondary" value="设置" @tap="personSetting"></wxc-button>
+        <wxc-button class="bottom-button" plain="{{true}}" size="normal" type="secondary" value="目录" @tap="selectChapter"></wxc-button>
+        <wxc-button class="bottom-button" plain="{{true}}" size="normal" type="success" value="下一章" @tap="readNextChapter"></wxc-button>
+      </view>
+    </scroll-view>
+  </view>
+  <wxc-popup id="botton_popup" animation-mode="none" align="bottom" locked="true" status="{{popupStatus}}"  @tap="closePopup">
+    <view class="popup__content">
+      <view class="setting-item">
+        <view class="setting-item-title">
+          文字大小
+        </view>
+        <view class="setting-item-info">
+          <view>
+            <wxc-button btn-style="border-radius: 20rpx;" class="setting-button" plain="{{true}}" size="normal" type="secondary" value="增大" @tap.stop="changePersonSetting(1,1)"></wxc-button>
+            <wxc-button btn-style="border-radius: 20rpx;" class="setting-button" plain="{{true}}" size="normal" type="secondary" value="减小" @tap.stop="changePersonSetting(1,0)"></wxc-button>
+          </view>
+        </view>
+      </view>
+      <view class="setting-item">
+        <view class="setting-item-title">
+          更改主题
+        </view>
+        <view class="setting-item-info">
+          <view>
+            <!-- <wxc-button btn-style="border-radius: 20rpx;" class="setting-button" plain="{{true}}" size="normal" type="secondary" value="夜间模式" @tap.stop="changePersonSetting"></wxc-button> -->
+            <wxc-button btn-style="border-radius: 20rpx;" class="setting-button" plain="{{true}}" size="normal" type="{{personSetting.bgColor == '#f3e8cb' ? 'beauty' : 'secondary'}}" value="护眼模式1" @tap="changePersonSetting(2,1)"></wxc-button>
+            <wxc-button btn-style="border-radius: 20rpx;" class="setting-button" plain="{{true}}" size="normal" type="{{personSetting.bgColor == '#CAEACE' ? 'beauty' : 'secondary'}}" value="护眼模式2" @tap="changePersonSetting(2,2)"></wxc-button>
+          </view>
+        </view>
+      </view>
+      <view class="setting-item">
+        <view class="setting-item-title">
+          底部工具栏
+        </view>
+        <view class="setting-item-info">
+          <view>
+            <wxc-button btn-style="border-radius: 20rpx;" class="setting-button" plain="{{true}}" size="normal" type="{{personSetting.position == 'fixed' ? 'beauty' : 'secondary'}}" value="固定底部" @tap="changePersonSetting(3,1)"></wxc-button>
+            <wxc-button btn-style="border-radius: 20rpx;" class="setting-button" plain="{{true}}" size="normal" type="{{personSetting.position == 'bottom' ? 'beauty' : 'secondary'}}" value="随页面滑动" @tap="changePersonSetting(3,2)"></wxc-button>
+          </view>
+        </view>
+      </view>
+    </view>
+  </wxc-popup>
+  <wxc-toast id="error_last_toast" text="已经是第一章了！"></wxc-toast>
+  <wxc-toast id="error_next_toast" text="已经是最后章节了！"></wxc-toast>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import Api from '../util/api.js'
+
+  export default class ReadBook extends wepy.page {
+    config = {
+      usingComponents: {
+        'wxc-abnor': '../../npm/@minui/wxc-abnor/dist/index',
+        'wxc-button': '../../npm/@minui/wxc-button/dist/index',
+        'wxc-loading': '../../npm/@minui/wxc-loading/dist/index',
+        'wxc-toast': '../../npm/@minui/wxc-toast/dist/index',
+        'wxc-popup': '../../npm/@minui/wxc-popup/dist/index'
+      }
+    }
+    components = {
+    }
+
+    data = {
+      scrolTop: 0,
+      id: '',
+      isLoading: true,
+      chapters: [],
+      loadError: false,
+      chapterNo: 0,
+      chapterContent: '',
+      chapterTitle: '',
+      title: '',
+      isInShelf: false,
+      setting1: '',
+      personSetting: null,
+      popupStatus: 'hide'
+    }
+    methods = {
+      onAbnorTap: function () {
+        this.getBookChapters()
+      },
+      closePopup: function () {
+        this.popupStatus = 'hide'
+        this.$apply()
+      },
+      changePersonSetting: function (type, value, event) {
+        if(type == 1) {
+          if(value == 1) {
+            this.personSetting.fontSize += 2
+          } else {
+            this.personSetting.fontSize -= 2
+          }
+        } else if(type == 2) {
+          if(value == 1) {
+            this.personSetting.bgColor = '#f3e8cb'
+          } else {
+            this.personSetting.bgColor = '#CAEACE'
+          }
+        } else if(type == 3) {
+          if(value == 1) {
+            this.personSetting.position = 'fixed'
+          } else {
+            this.personSetting.position = 'bottom'
+          }
+        }
+
+        wx.setStorage({
+          key: "personSetting",
+          data: this.personSetting
+        })
+      },
+      readLastChapter: function() {
+        if(this.chapterNo == 0) {
+          let $toast = this.$wxpage.selectComponent('#error_last_toast')
+          $toast && $toast.show()
+          return
+        }
+        if(this.isLoading) {
+          return
+        }
+        this.scrolTop = 0
+        this.isLoading = true
+        this.chapterNo = this.chapterNo - 1
+        this.getChapterContont()
+      },
+      readNextChapter: function() {
+        if(this.chapterNo == this.chapters.length) {
+          let $toast = this.$wxpage.selectComponent('#error_next_toast')
+          $toast && $toast.show()
+          return
+        }
+        if(this.isLoading) {
+          return
+        }
+        this.scrolTop = 0
+        this.isLoading = true
+        this.chapterNo = this.chapterNo + 1
+        this.getChapterContont()
+      },
+      personSetting: function() {
+        this.popupStatus = 'show'
+      },
+      selectChapter: function() {
+        wepy.navigateTo({
+          url: './bookContact?title=' + this.title + '&sc=' + this.chapterNo
+        })
+      }
+    }
+
+    getBookChapters() {
+      const url = Api.host + Api.noEncode + Api.book.chaptersUrl + this.id
+      wepy.request({
+        url: url
+      }).then(res => {
+        console.log(res)
+        if(res.data.ok) {
+          let chapters = res.data.mixToc.chapters
+          for(let chapter in chapters) {
+            chapters[chapter].index = chapter
+          }
+          this.chapters = res.data.mixToc.chapters
+          this.$parent.globalData.chapters = res.data.mixToc.chapters
+          this.getChapterContont()
+        } else {
+          this.loadError = true
+          this.$apply()
+        }
+      })
+    }
+
+    getChapterContont() {
+      this.isLoading = true
+      wx.setStorage({
+        key: "book" + this.id,
+        data: {
+          isInShelf: this.isInShelf,
+          chapterNo: this.chapterNo
+        }
+      })
+      let link = this.chapters[this.chapterNo].link
+      const url = Api.host + Api.encode + encodeURIComponent(Api.book.chapterContent) + '&encodeurl='  + encodeURIComponent(link);
+      wepy.request({
+        url: url
+      }).then(res => {
+        console.log(res)
+        if(res.data.ok) {
+          this.chapterTitle = this.chapters[this.chapterNo].title
+          this.chapterContent = '\u3000\u3000' + res.data.chapter.body.replace(/\n/g, '\n\u3000\u3000')
+          this.isLoading = false
+          this.$apply()
+        } else {
+          this.loadError = true
+          this.$apply()
+        }
+      })
+    }
+
+
+    onUnload() {
+      if(!this.isInShelf) {
+        let pages = getCurrentPages();
+        let prePage = pages[pages.length - 2];
+        this.$parent.$pages[`/${prePage.route}`].$wxpage.selectComponent('#add_shelf_dialog').show();
+        this.$parent.$pages[`/${prePage.route}`].$apply();
+      }
+    }
+
+    onLoad(options) {
+      if(options && options.id && options.title) {
+        wepy.setNavigationBarTitle({
+          title: options.title
+        })
+        this.title = options.title
+        this.id = options.id
+
+        let that = this
+        wx.getStorage({
+          key: 'book' + this.id,
+          success: function(res) {
+            that.isInShelf = res.data.isInShelf
+            that.chapterNo = res.data.chapterNo
+          },
+          fail: function(res) {
+            that.isInShelf = false
+            that.chapterNo = 0
+          }
+        })
+
+        wx.getStorage({
+          key: 'personSetting',
+          success: function(res) {
+            that.personSetting = res.data
+          },
+          fail: function(res) {
+            that.personSetting = {
+              fontSize: 30,
+              bgColor: '#f3e8cb',
+              position: 'fixed'
+            }
+          }
+        })
+
+        this.getBookChapters()
+      }
+    }
+  }
+</script>

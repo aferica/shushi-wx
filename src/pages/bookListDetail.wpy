@@ -1,0 +1,153 @@
+<style lang="less">
+  .label {
+    margin-left: 20rpx;
+  }
+
+  .author-comment-box {
+    min-height: 150rpx;
+    background: #ffffff;
+  }
+  .comment-side {
+    width: 100rpx;
+    flex-grow: 0;
+    padding: 40rpx 10rpx 0 10rpx;
+  }
+  .comment-avatar {
+    display: block;
+    width: 80rpx;
+    height: 80rpx;
+  }
+  .comment-main {
+    width: 650rpx;
+    margin: 40rpx 0;
+  }
+  .comment-author {
+    font-size: 28rpx;
+    color: #aa530e;
+  }
+  .comment-name {
+    font-size: 28rpx;
+    color: #111111;
+    line-height: 60rpx;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .comment-detail {
+    color: #707070;
+    font-size: 24rpx;
+    line-height: 40rpx;
+    max-height: 750rpx;
+    padding: 0 40rpx;
+  }
+</style>
+<template>
+  <view class="container">
+    <wxc-loading is-show="{{isLoading}}"></wxc-loading>
+    <wxc-abnor wx:if="{{errorRe}}" type="REQUEST_ERROR"
+      @abnortap="onAbnorTap"></wxc-abnor>
+    <view wx:if="{{bookList != null}}" class="content-box">
+      <view class="author-comment-box">
+        <view style="display: flex">
+          <view class="comment-side">
+            <wxc-avatar class="comment-avatar" src="{{staticUrl + bookList.author.avatar}}"></wxc-avatar>
+          </view>
+          <view class="comment-main">
+            <view class="comment-author">{{bookList.author.nickname}}  lv{{bookList.author.lv}}  </view>
+            <view  wx:if="{{bookList.title != null}}" class="comment-name">{{bookList.title}}</view>
+          </view>
+        </view>
+        <view class="comment-detail">
+          <text>{{bookList.desc}}</text>
+        </view>
+      </view>
+      <wxc-panel>
+        <repeat for="{{books}}" index="index" item="item">
+          <BookDetail :itemValue.sync="item"></BookDetail>
+        </repeat>
+      </wxc-panel>
+      <wxc-loadmore wx:if="{{!firstIn && dataList.length > 0}}"></wxc-loadmore>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import Api from '../util/api.js'
+  import BookDetail from '../components/BookDetail'
+
+  export default class BookListDetail extends wepy.page {
+    config = {
+      navigationBarTitleText: '精彩书单',
+      usingComponents: {
+        'wxc-tab': '../../npm/@minui/wxc-tab/dist/index',
+        'wxc-tab-panel': '../../npm/@minui/wxc-tab/dist/panel',
+        'wxc-panel': '../../npm/@minui/wxc-panel/dist/index',
+        'wxc-abnor': '../../npm/@minui/wxc-abnor/dist/index',
+        'wxc-loadmore': '../../npm/@minui/wxc-loadmore/dist/index',
+        'wxc-loading': '../../npm/@minui/wxc-loading/dist/index',
+        'wxc-label': '../../npm/@minui/wxc-label/dist/index',
+        'wxc-avatar': '../../npm/@minui/wxc-avatar/dist/index',
+      }
+    }
+    components = {
+      BookDetail
+    }
+
+    data = {
+      id: '',
+      isLoading: true,
+      errorRe: false,
+      bookList: null,
+      books: [],
+      firstIn: true,
+      staticUrl: 'http://statics.zhuishushenqi.com',
+    }
+
+    methods = {
+      onAbnorTap: function () {
+        this.getBookListDetail()
+      },
+      scrollToTop: function () {
+        wepy.pageScrollTo({
+          scrollTop: 0
+        })
+      }
+    }
+
+    getBookListDetail() {
+      this.isLoading = true
+      let duration = this.duration
+      let url = Api.host + Api.noEncode + Api.bookList.detail + '/' + this.id
+      wepy.request({
+          url: url
+      }).then(res => {
+        console.log(res)
+        if(res.data.ok ) {
+          this.bookList = res.data.bookList
+          for(let item of res.data.bookList.books) {
+            let book = item.book
+            this.books.push(book)
+          }
+          this.isLoading = false
+          this.firstIn = false
+          this.$apply()
+        } else {
+          this.firstIn = false
+          this.isLoading = false
+          this.errorRe = true
+          this.$apply()
+        }
+      })
+    }
+
+    onLoad(options) {
+      console.log(options)
+      wepy.setNavigationBarTitle({
+          title: options.title
+      })
+      this.id = options.id
+      this.getBookListDetail()
+    }
+  }
+</script>

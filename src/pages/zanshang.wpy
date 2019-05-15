@@ -1,0 +1,36 @@
+<style lang="less">
+.zanshang-image {
+  width: 750rpx;
+  height: 750rpx;
+  padding-top: 150rpx;
+}
+</style>
+<template>
+  <view class="container" @tap="previewImage">
+    <image class="zanshang-image" src="https://aferica.oss-cn-shenzhen.aliyuncs.com/WechatIMG131.png"/>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+
+  export default class Index extends wepy.page {
+    config = {
+      navigationBarTitleText: '赞赏',
+    }
+    data = {
+      imgalist: ['https://aferica.oss-cn-shenzhen.aliyuncs.com/WechatIMG131.png'],
+    }
+    methods = {
+      previewImage: function () {
+        wx.previewImage({
+          current: this.imgalist, // 当前显示图片的http链接
+          urls: this.imgalist // 需要预览的图片http链接列表
+        })
+      }
+    }
+
+    onLoad() {
+    }
+  }
+</script>

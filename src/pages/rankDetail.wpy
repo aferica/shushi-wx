@@ -1,0 +1,125 @@
+<style lang="less">
+  .label {
+    margin-left: 20rpx;
+  }
+</style>
+<template>
+  <view class="container">
+    <wxc-tab
+      wx:if="{{showTab}}"
+      @tabchange="tabchange"
+      default-index="{{0}}"
+      animate="{{true}}"
+    >
+      <wxc-tab-panel tab-index="{{0}}" label="周榜" >
+      </wxc-tab-panel>
+      <wxc-tab-panel tab-index="{{1}}" label="月榜" >
+      </wxc-tab-panel>
+      <wxc-tab-panel tab-index="{{2}}" label="总榜" >
+      </wxc-tab-panel>
+    </wxc-tab>
+    <wxc-loading is-show="{{isLoading}}"></wxc-loading>
+    <wxc-abnor wx:if="{{errorRe}}" type="REQUEST_ERROR"
+      @abnortap="onAbnorTap"></wxc-abnor>
+    <wxc-abnor wx:if="{{!firstIn && !hasBooks}}" type="DATA"></wxc-abnor>
+    <wxc-panel>
+      <repeat for="{{dataList}}" index="index" item="item">
+        <BookDetail :itemValue.sync="item"></BookDetail>
+      </repeat>
+    </wxc-panel>
+    <wxc-loadmore wx:if="{{!firstIn && hasBooks}}" is-end="{{true}}" text="我是有底线的"></wxc-loadmore>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import Api from '../util/api.js'
+  import BookDetail from '../components/BookDetail'
+
+  export default class RankDetail extends wepy.page {
+    config = {
+      navigationBarTitleText: '排行榜',
+      usingComponents: {
+        'wxc-tab': '../../npm/@minui/wxc-tab/dist/index',
+        'wxc-tab-panel': '../../npm/@minui/wxc-tab/dist/panel',
+        'wxc-panel': '../../npm/@minui/wxc-panel/dist/index',
+        'wxc-abnor': '../../npm/@minui/wxc-abnor/dist/index',
+        'wxc-loadmore': '../../npm/@minui/wxc-loadmore/dist/index',
+        'wxc-loading': '../../npm/@minui/wxc-loading/dist/index',
+        'wxc-label': '../../npm/@minui/wxc-label/dist/index',
+      }
+    }
+    components = {
+      BookDetail
+    }
+
+    data = {
+      isLoading: true,
+      errorRe: false,
+      dataList: [],
+      firstIn: true,
+      hasBooks: false,
+      showTab: false,
+      id: '',
+      weekId: '',
+      monthId: '',
+      totalId: ''
+    }
+
+    methods = {
+      tabchange: function (e) {
+        console.log(e.detail.key);
+        this.isLoading = true
+        if(e.detail.key == 0) {
+          this.id = this.weekId
+        } else if(e.detail.key == 1) {
+          this.id = this.monthId
+        } else {
+          this.id = this.totalId
+        }
+        this.getRankDetailById()
+      },
+      onAbnorTap: function () {
+        this.getRankDetailById()
+      },
+    }
+
+    getRankDetailById() {
+      this.isLoading = true
+      const url = Api.host + Api.noEncode + Api.rank.rankInfo + '/' + this.id
+      wepy.request({
+          url: url
+      }).then(res => {
+        console.log(res)
+        if(res.data.ok ) {
+          this.firstIn = false
+          this.dataList = res.data.ranking.books
+          this.hasBooks = res.data.ranking.books.length > 0
+          this.isLoading = false
+          this.$apply()
+        } else {
+          this.isLoading = false
+          this.errorRe = true
+          this.$apply()
+        }
+      })
+    }
+
+    onLoad(options) {
+      console.log(options)
+      if(options && options.id && options.title) {
+        wepy.setNavigationBarTitle({
+          title: options.title
+        })
+        this.id = options.id
+        this.weekId = options.id
+        if(options.mt == '1') {
+          this.showTab = true
+          this.monthId = options.mon
+          this.totalId = options.tot
+        }
+        this.getRankDetailById()
+      }
+    }
+  }
+</script>

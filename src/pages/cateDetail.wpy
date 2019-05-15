@@ -1,0 +1,202 @@
+<style lang="less">
+  .label {
+    margin-left: 20rpx;
+  }
+
+  .book-type-min {
+    width:750rpx;
+    font-size:30rpx;
+    height:80rpx;
+    display: -webkit-box;
+    overflow-x: scroll;
+    -webkit-overflow-scrolling:touch;
+    background-color:#ffffff;
+    border-bottom: 2rpx solid #ececec;
+  }
+  .book-type-min-item {
+    padding: 0 0 0 20rpx;
+    line-height: 80rpx;
+  }
+  .book-type-min-select-item {
+    color: #b93321;
+  }
+  .select-box {
+    position:fixed;
+    height:160rpx;
+    top:0;
+    width:750rpx;
+    z-index:10;
+  }
+  // .content-box {
+  //   padding-top: 160rpx;
+  // }
+</style>
+<template>
+  <view class="container">
+    <view class="select-box">
+      <view class="book-type-min">
+        <repeat for="{{types}}" index="index" item="item">
+          <view class="book-type-min-item {{item.value == type ? 'book-type-min-select-item' : ''}}"
+            @tap="selectType({{item}})">{{item.name}}</view>
+        </repeat>
+      </view>
+      <view wx:if="{{mins.length > 1}}" class="book-type-min" >
+        <repeat for="{{mins}}" index="index" item="item">
+          <view class="book-type-min-item {{item == minor ? 'book-type-min-select-item' : ''}}"
+            @tap="selectMin({{item}})">{{item}}</view>
+        </repeat>
+      </view>
+    </view>
+    <view class="content-box" style="{{mins.length > 1 ? 'padding-top: 160rpx;' : 'padding-top: 80rpx;'}}">
+      <wxc-loading is-show="{{isLoading}}"></wxc-loading>
+      <wxc-abnor wx:if="{{errorRe}}" type="REQUEST_ERROR"
+        @abnortap="onAbnorTap"></wxc-abnor>
+      <wxc-abnor wx:if="{{!firstIn && !hasBooks}}" type="DATA"></wxc-abnor>
+      <wxc-panel>
+        <repeat for="{{dataList}}" index="index" item="item">
+          <BookDetail :itemValue.sync="item"></BookDetail>
+        </repeat>
+      </wxc-panel>
+      <wxc-loadmore wx:if="{{!firstIn && dataList.length > 0}}"></wxc-loadmore>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import Api from '../util/api.js'
+  import BookDetail from '../components/BookDetail'
+
+  export default class CateDetail extends wepy.page {
+    config = {
+      navigationBarTitleText: '我的书架',
+      usingComponents: {
+        'wxc-tab': '../../npm/@minui/wxc-tab/dist/index',
+        'wxc-tab-panel': '../../npm/@minui/wxc-tab/dist/panel',
+        'wxc-panel': '../../npm/@minui/wxc-panel/dist/index',
+        'wxc-abnor': '../../npm/@minui/wxc-abnor/dist/index',
+        'wxc-loadmore': '../../npm/@minui/wxc-loadmore/dist/index',
+        'wxc-loading': '../../npm/@minui/wxc-loading/dist/index',
+        'wxc-label': '../../npm/@minui/wxc-label/dist/index',
+      }
+    }
+    components = {
+      BookDetail
+    }
+
+    data = {
+      isLoading: true,
+      errorRe: false,
+      dataList: [],
+      firstIn: true,
+      hasBooks: false,
+      showTab: false,
+      category: '',
+      gender: '',
+      major: '',
+      start: 0,
+      type: 'hot',
+      minor: '全部',
+      types: [{name:'热门', value:'hot'},{name:'新书', value:'new'},{name:'好评', value:'reputation'},
+        {name:'完结', value:'over'},{name:'VIP', value:'monthly'}],
+      mins: []
+    }
+
+    methods = {
+      selectType: function (type) {
+        this.type = type.value
+        this.start = 0
+        this.dataList = []
+        this.getCateDetail()
+      },
+      selectMin: function (min) {
+        this.minor = min
+        this.start = 0
+        this.dataList = []
+        this.getCateDetail()
+      },
+      onAbnorTap: function () {
+        this.getCateDetail()
+      },
+      scrollToTop: function () {
+        wepy.pageScrollTo({
+          scrollTop: 0
+        })
+      }
+    }
+
+    getCateDetail() {
+      this.isLoading = true
+      let minor = this.minor
+      if(minor == '全部') {
+        minor = ''
+      }
+      let url = Api.host + Api.noEncode + Api.category.categoryInfo
+        + encodeURIComponent('?major=' + this.category + '&minor=' + minor + '&type=' + this.type
+        + '&limit=20&start=' + this.start + '&gender=' + this.gender)
+      wepy.request({
+          url: url
+      }).then(res => {
+        console.log(res)
+        if(res.data.ok ) {
+          this.dataList = this.dataList.concat(res.data.books)
+          this.hasBooks = this.dataList.length > 0
+          this.start = this.dataList.length
+          this.isLoading = false
+          this.firstIn = false
+          this.$apply()
+        } else {
+          this.firstIn = false
+          this.isLoading = false
+          this.errorRe = true
+          this.$apply()
+        }
+      })
+    }
+
+    getBookSubCates() {
+      let url = Api.host + Api.noEncode + Api.category.categoryWithSubCategories
+      wepy.request({
+          url: url
+      }).then(res => {
+        console.log(res)
+        if(res.data.ok ) {
+          let allCateByGender = {}
+          if(this.gender == 'female') {
+            allCateByGender = res.data.female
+          } else {
+            allCateByGender = res.data.male
+          }
+          for(let item of allCateByGender) {
+            if(item.major == this.category) {
+              this.mins = item.mins
+              this.mins.unshift('全部')
+            }
+          }
+          this.$apply()
+        } else {
+          this.errorRe = true
+          this.$apply()
+        }
+      })
+    }
+
+    onReachBottom(event) {
+      //请求更多数据
+      this.getCateDetail()
+    }
+
+    onLoad(options) {
+      console.log(options)
+      if(options && options.cate) {
+        wepy.setNavigationBarTitle({
+          title: options.cate
+        })
+        this.category = options.cate
+        this.gender = options.gender
+        this.getBookSubCates()
+        this.getCateDetail()
+      }
+    }
+  }
+</script>

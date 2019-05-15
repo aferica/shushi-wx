@@ -1,0 +1,125 @@
+<style>
+  .wrap {
+    width: 750rpx;
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    font-size: 30rpx;
+    padding-left:2rpx;
+    padding-bottom:2rpx;
+  }
+  .item {
+    width: 249rpx;
+    height: 80rpx;
+    text-align: center;
+    padding: 10rpx 0;
+    border-bottom: 2rpx solid #ececec;
+  }
+
+  .item:nth-of-type(3n+1) {
+    border-right: 2rpx solid #ececec;
+  }
+  .item:nth-of-type(3n+2) {
+    border-right: 2rpx solid #ececec;
+  }
+  .cate-name {
+    line-height: 50rpx;
+    font-size: 30rpx;
+  }
+  .cate-numb {
+    line-height: 30rpx;
+    font-size: 22rpx;
+    color: #999999;
+  }
+</style>
+<template>
+  <view class="container">
+    <wxc-loading is-show="{{isLoading}}"></wxc-loading>
+    <wxc-abnor wx:if="{{errorRe}}" type="REQUEST_ERROR"
+      bind:abnortap="onAbnorTap"></wxc-abnor>
+    <view wx:if="{{!isLoading && !errorRe}}">
+      <wxc-panel title="男生">
+        <view class="wrap">
+          <repeat for="{{maleList}}" index="ind" item="cate">
+            <view class="item" @tap="gotoCateDetail({{cate.name}}, 'male')">
+              <view class="cate-name">{{cate.name}}</view>
+              <view class="cate-numb">{{cate.bookCount}}本</view>
+            </view>
+          </repeat>
+        </view>
+      </wxc-panel>
+      <wxc-panel title="女生">
+        <view class="wrap">
+          <repeat for="{{femaleList}}" index="ind" item="cate">
+            <view class="item" @tap="gotoCateDetail({{cate.name}}, 'female')">
+              <view class="cate-name">{{cate.name}}</view>
+              <view class="cate-numb">{{cate.bookCount}}本</view>
+            </view>
+          </repeat>
+        </view>
+      </wxc-panel>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import Api from '../util/api.js'
+
+  export default class Rank extends wepy.page {
+    config = {
+      navigationBarTitleText: '排行榜',
+      usingComponents: {
+        'wxc-list': '../../npm/@minui/wxc-list/dist/index',
+        'wxc-panel': '../../npm/@minui/wxc-panel/dist/index',
+        'wxc-tab-panel': '../../npm/@minui/wxc-tab/dist/panel',
+        'wxc-abnor': '../../npm/@minui/wxc-abnor/dist/index',
+        'wxc-loading': '../../npm/@minui/wxc-loading/dist/index'
+      }
+    }
+    components = {
+    }
+
+    data = {
+      isLoading: true,
+      errorRe: false,
+      staticUrl: 'http://statics.zhuishushenqi.com',
+      maleList: [],
+      femaleList: []
+    }
+
+    methods = {
+      gotoCateDetail: function (cate, gender) {
+        console.log(cate)
+        wepy.navigateTo({
+          url: 'cateDetail?cate=' + cate + '&gender=' + gender
+        })
+      }
+    }
+
+    getBookCate() {
+      const url = Api.host + Api.noEncode + Api.category.categoryWithBookCount
+
+      wepy.request({
+        url: url
+      }).then(res => {
+        if(res.data.ok) {
+          this.maleList = res.data.male
+          this.femaleList = res.data.female
+          this.errorRe = false
+          this.isLoading = false
+          this.$apply()
+        } else {
+          this.isLoading = false
+          this.errorRe = true
+          this.$apply()
+        }
+      })
+    }
+
+    onLoad() {
+      let self = this
+      this.getBookCate()
+    }
+  }
+</script>

@@ -1,0 +1,97 @@
+<style lang="less">
+  .list-check {
+    display: flex;
+    align-items: center;
+    padding: 20rpx 0;
+  }
+  .list-image {
+    width: 102rpx;
+    height: 102rpx;
+    margin-left: 30rpx;
+  }
+
+  .radius {
+    border-radius: 100px;
+  }
+  .userNickName {
+    padding-left: 20rpx;
+    font-size: 32rpx;
+  }
+
+  .kf_button{
+    background-color: rgba(255, 255, 255, 0);
+    border: 0px;
+    height: 100rpx;
+    right: 0;
+    bottom: 60rpx;
+    position: fixed;
+  }
+  .kf_button::after{
+    border: 0px;
+  }
+  .kf_image{
+    z-index: 9999;
+    width: 100rpx;
+    height: 100rpx;
+  }
+</style>
+<template>
+  <view class="container">
+    <wxc-panel>
+      <view class="list-check">
+        <open-data class="list-image radius" type="userAvatarUrl"></open-data>
+        <open-data class="userNickName" type="userNickName"></open-data>
+      </view>
+    </wxc-panel>
+
+    <wxc-panel>
+      <wxc-list class="item" icon="search" icon-color="#69A0DD" title="搜索" @tap="goNextPage('search')"></wxc-list>
+      <wxc-list class="item" src="/images/home_find_rank.png" icon-color="#69A0DD" title="排行榜" @tap="goNextPage('rank')"></wxc-list>
+      <wxc-list class="item" src="/images/home_find_category.png" icon-color="#69A0DD" title="分类" @tap="goNextPage('category')"></wxc-list>
+      <wxc-list class="item" src="/images/home_find_topic.png" icon-color="#69A0DD" mode="none" title="主题书单" @tap="goNextPage('bookList')"></wxc-list>
+    </wxc-panel>
+
+    <wxc-panel>
+      <!-- <wxc-list class="item" src="/images/feedback.png" icon-color="#69A0DD" title="客服反馈"></wxc-list> -->
+      <wxc-list class="item" src="/images/hongbao.png" icon-color="#69A0DD" mode="none" title="赞赏" @tap="goNextPage('zanshang')"></wxc-list>
+    </wxc-panel>
+
+    <button class="kf_button" open-type="contact" session-from="weapp">
+        <image class="kf_image" src="../images/kefu.png"></image>
+    </button>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+
+  export default class Find extends wepy.page {
+    config = {
+      navigationBarTitleText: '发现',
+      usingComponents: {
+        'wxc-list': '../../npm/@minui/wxc-list/dist/index',
+        'wxc-panel': '../../npm/@minui/wxc-panel/dist/index'
+      }
+    }
+    components = {
+    }
+
+    data = {
+    }
+
+    methods = {
+      goNextPage: function (url) {
+        wepy.navigateTo({
+          url: url
+        })
+      },
+      goToGeiZanApp: function () {
+
+      }
+    }
+
+    onLoad() {
+      let self = this
+    }
+  }
+</script>

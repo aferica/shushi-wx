@@ -1,0 +1,121 @@
+<style lang="less">
+page {
+  background-color: #ececeb;
+}
+.container {
+  width: 750rpx;
+  padding: 10rpx 0;
+}
+</style>
+
+<script>
+import wepy from 'wepy'
+import 'wepy-async-function'
+import Api from './util/api.js'
+
+let env = 'dev'
+// env = 'prod'
+if (env === 'prod') {
+  console.log = () => {}
+  console.info = () => {}
+}
+
+
+export default class extends wepy.app {
+  config = {
+    pages: [
+      // 'pages/bookInfo',
+      // 'pages/search',
+      // 'pages/rank',
+      'pages/index',
+      'pages/find',
+      'pages/search',
+      'pages/rank',
+      'pages/rankDetail',
+      'pages/category',
+      'pages/cateDetail',
+      'pages/bookInfo',
+      'pages/errorPage',
+      'pages/bookList',
+      'pages/bookListDetail',
+      'pages/readBook',
+      'pages/bookContact',
+      'pages/zanshang'
+    ],
+    window: {
+      backgroundTextStyle: 'light',
+      navigationBarBackgroundColor: '#448ef6',
+      navigationBarTitleText: '书适阅读',
+      navigationBarTextStyle: 'white',
+      backgroundColor: '#ececeb'
+    },
+    tabBar: {
+      color: '#707070',
+      selectedColor: '#1296db',
+      list: [
+        {
+          iconPath: './images/home-un.png',
+          selectedIconPath: './images/home.png',
+          pagePath: 'pages/index',
+          text: '书架'
+        },
+        {
+          iconPath: './images/compass-un.png',
+          selectedIconPath: './images/compass.png',
+          pagePath: 'pages/find',
+          text: '发现'
+        }
+      ]
+    }
+  }
+
+  globalData = {
+    gender: 'male',  // ''代表未使用  male代表男生  female代表女生
+    books: [],
+    personSetting: {
+      bgColor: '#CCE8CF',
+      fontWeight: 300,
+    },
+    chapters: [],
+  }
+
+  constructor () {
+    super()
+    this.use('requestfix');
+    this.use('promisify');
+
+    // 配置拦截器
+    this.intercept('request', {
+      config(p) {
+        console.log("拦截config:", p);
+        p.header = { 'content-type': "application/json;charset=UTF-8"} ;
+        if (p.url.indexOf(Api.host) >= 0 && p.url.indexOf('token') === -1) {
+          let token = this.token
+          if (env === 'dev') {
+            token = '09c19231c547b965a0860b1a702da01f'
+          }
+          if (p.url.indexOf('?') === -1) {
+            p.url = p.url + `?token=${token}`
+          } else {
+            p.url = p.url + `&token=${token}`
+          }
+        }
+        return p;
+      },
+      success(p) {
+        //
+        let pages = getCurrentPages();
+        console.log("拦截success:", p);
+        return p;
+      },
+      fail(p) {
+        wepy.navigateTo({
+          url: './errorPage',
+        })
+        return p;
+      }
+    })
+  }
+
+}
+</script>

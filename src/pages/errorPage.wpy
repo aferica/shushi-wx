@@ -1,0 +1,40 @@
+<style lang="less">
+
+</style>
+<template>
+  <view class="container">
+    <wxc-abnor type="REQUEST_ERROR"
+      button="点击返回"
+      bind:abnortap="onAbnorTap"></wxc-abnor>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import Api from '../util/api.js'
+
+  export default class Rank extends wepy.page {
+    config = {
+      navigationBarTitleText: '发现错误',
+      usingComponents: {
+        'wxc-abnor': '../../npm/@minui/wxc-abnor/dist/index',
+      }
+    }
+    components = {
+    }
+
+    data = {
+    }
+
+    methods = {
+      onAbnorTap: function () {
+        wx.navigateBack({
+          delta: 2
+        })
+      },
+    }
+
+    onLoad() {
+    }
+  }
+</script>

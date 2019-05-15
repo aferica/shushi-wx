@@ -1,0 +1,455 @@
+<style lang="less">
+  .content-box {
+    padding-bottom: 110rpx;
+  }
+  .wrap {
+    display: flex;
+    height: 300rpx;
+    background: #ffffff;
+    box-sizing: border-box;
+    border-bottom: 1rpx solid #ececec;
+  }
+  .item {
+    font-size: 20rpx;
+    text-align: left;
+  }
+  .side {
+    width: 200rpx;
+    flex-grow: 0;
+  }
+  .main {
+    width: 300rpx;
+    margin: 14rpx 20rpx 20rpx 20rpx;
+  }
+  .rate {
+    width: 250rpx;
+    margin: 50rpx 10rpx 20rpx 20rpx;
+    text-align: center;
+  }
+  .book-cover {
+    padding: 20rpx 10rpx 20rpx 30rpx;
+    width: 160rpx;
+    height: 250rpx;
+  }
+  .book-name {
+    font-size: 32rpx;
+    line-height: 60rpx;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    max-width:240rpx;
+  }
+  .book-author {
+    color: #999999;
+    font-size: 28rpx;
+    line-height: 50rpx;
+  }
+  .book-wordCount {
+    color: #999999;
+    font-size: 28rpx;
+    line-height: 50rpx;
+  }
+  .book-label {
+    line-height: 50rpx;
+  }
+
+  .rate-title {
+    color: #999999;
+    font-size: 24rpx;
+    line-height: 50rpx;
+  }
+  .rate-score {
+    color: #b93321;
+    font-size: 50rpx;
+    line-height: 80rpx;
+    font-weight: bolder;
+  }
+
+  .book-long-intro {
+    padding: 20rpx;
+    font-size: 24rpx;
+    line-height: 36rpx;
+    box-sizing: border-box;
+    border-bottom: 1rpx solid #ececec;
+  }
+  .book-long-intro-title {
+    padding: 0 20rpx;
+    display: flex;
+  }
+  .book-long-intro-value {
+    padding: 20rpx;
+    color: #999999;
+  }
+
+  .p-style {
+    background-color: #ce2525;
+    height: 24rpx;
+    width: 6rpx;
+    margin-top:6rpx;
+    margin-right:6rpx;
+  }
+
+  .book-reputation {
+    display: flex;
+    height: 150rpx;
+    padding: 0 15rpx;
+    background: #ffffff;
+    box-sizing: border-box;
+    border-bottom: 1rpx solid #ececec;
+  }
+  .book-reputation-item {
+    width: 180rpx;
+    text-align: center;
+    padding: 40rpx 10rpx;
+  }
+  .book-reputation-item-title {
+    line-height: 30rpx;
+    font-size: 22rpx;
+    color: #999999;
+  }
+  .book-reputation-item-value {
+    line-height: 40rpx;
+    font-size: 24rpx;
+  }
+
+  .bottom-button-box {
+    position: fixed;
+    height: 120rpx;
+    bottom: 0;
+    left: 0;
+    width: 750rpx;
+    z-index: 100;
+    background-color: #efefef;
+    display: flex;
+  }
+  .bottom-button-font {
+    font-size: 36rpx;
+    line-height: 120rpx;
+    text-align: center;
+    width: 50%;
+    font-weight: light;
+  }
+  .start-read {
+    background-color: #b93321;
+    color: #fff;
+  }
+</style>
+<template>
+  <view class="container">
+    <wxc-loading is-show="{{isLoading}}"></wxc-loading>
+    <wxc-abnor wx:if="{{errorRe}}" type="REQUEST_ERROR"
+      @abnortap="onAbnorTap"></wxc-abnor>
+    <wxc-panel class="content-box" wx:if="{{!isLoading && !errorRe}}">
+      <view class="wrap">
+        <view class="item side">
+          <image class="book-cover"  src="{{bookInfo.allcover}}" />
+        </view>
+        <view class="item main">
+          <view class="book-name">{{bookInfo.title}}</view>
+          <view class="book-author">
+            <text space="ensp">{{bookInfo.author}}</text>
+          </view>
+          <view class="book-label">
+            <wxc-label class="label" type="fill" type-color="#ff7777">{{bookInfo.majorCate}}</wxc-label>
+            <wxc-label class="label" type="fill" type-color="#4bbb8b">{{bookInfo.minorCate}}</wxc-label>
+          </view>
+          <view class="book-wordCount">
+            <text space="ensp">{{bookInfo.wordCount}}字</text>
+          </view>
+        </view>
+        <view class="item rate">
+          <view class="rate-title">追书评分</view>
+          <view class="rate-score">{{bookInfo.rating.newscore}}</view>
+          <wxc-rate class="rate-icon" value="{{bookInfo.rating.newrate}}" readonly="{{true}}" size="28"></wxc-rate>
+          <view class="rate-title">{{bookInfo.rating.count}}人评分</view>
+        </view>
+      </view>
+      <view class="book-reputation">
+        <view class="book-reputation-item">
+          <view class="book-reputation-item-title">追书人气</view>
+          <view class="book-reputation-item-value">{{bookInfo.latelyFollower != null ? bookInfo.latelyFollower : 0}}</view>
+        </view>
+        <view class="book-reputation-item">
+          <view class="book-reputation-item-title">读者留存</view>
+          <view class="book-reputation-item-value">{{bookInfo.retentionRatio != null ? bookInfo.retentionRatio : 0}}%</view>
+        </view>
+        <view class="book-reputation-item">
+          <view class="book-reputation-item-title">社区帖子</view>
+          <view class="book-reputation-item-value">{{bookInfo.postCount != null ? bookInfo.postCount : 0}}</view>
+        </view>
+        <view class="book-reputation-item">
+          <view class="book-reputation-item-title">日更新字</view>
+          <view class="book-reputation-item-value">{{bookInfo.serializeWordCount != null ? bookInfo.serializeWordCount : 0}}</view>
+        </view>
+      </view>
+      <view class="book-long-intro">
+        <view class="book-long-intro-title">
+          <view class="p-style"></view>简介
+        </view>
+        <view class="book-long-intro-value">
+          <text space="ensp">{{bookInfo.longIntro}}</text>
+        </view>
+      </view>
+      <view class="book-long-intro">
+        <view class="book-long-intro-title">
+          <view class="p-style"></view>热门短评
+        </view>
+        <repeat for="{{shortCommentList}}" index="index" item="item">
+          <CommentItem :itemValue.sync="item"></CommentItem>
+        </repeat>
+      </view>
+      <view class="book-long-intro">
+        <view class="book-long-intro-title">
+          <view class="p-style"></view>热门书评
+        </view>
+        <repeat for="{{commentList}}" index="index" item="item">
+          <CommentItem :itemValue.sync="item" short="{{true}}"></CommentItem>
+        </repeat>
+      </view>
+      <view class="book-long-intro">
+        <view class="book-long-intro-title">
+          <view class="p-style"></view>精彩小说推荐
+        </view>
+        <repeat for="{{bookRecommend}}" index="index" item="item">
+          <BookDetail :itemValue.sync="item"></BookDetail>
+        </repeat>
+      </view>
+      <view class="book-long-intro">
+        <view class="book-long-intro-title">
+          <view class="p-style"></view>图书信息
+        </view>
+        <view class="book-long-intro-value" style="height: 140rpx">版权：{{bookInfo.copyright}}</view>
+      </view>
+    </wxc-panel>
+    <view class="bottom-button-box">
+      <view class="bottom-button-font">
+        <view wx:if="{{isInShelf}}" style="color: #999999" @tap="removeBookFromShelf">不追了</view>
+        <view wx:if="{{!isInShelf}}" style="color: #b93321" @tap="addBookToShelf">追更新</view>
+      </view>
+      <view class="bottom-button-font start-read" @tap="startReadBook">开始阅读</view>
+    </view>
+  </view>
+
+  <wxc-dialog id="add_shelf_dialog" class="wxc-dialog"
+    title="是否添加到书架"
+    content="是否喜欢该本小说呢？喜欢就加入书架吧！"
+    confirm-text="加入书架👍"
+    cancel-text="不喜欢👎"
+    @confirm="addBookToShelf"
+    @cancel="removeBookFromShelf"></wxc-dialog>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import Api from '../util/api.js'
+  import CommentItem from '../components/CommentItem'
+  import BookDetail from '../components/BookDetail'
+
+  export default class BookInfo extends wepy.page {
+    config = {
+      navigationBarTitleText: '我的书架',
+      usingComponents: {
+        'wxc-list': '../../npm/@minui/wxc-list/dist/index',
+        'wxc-panel': '../../npm/@minui/wxc-panel/dist/index',
+        'wxc-abnor': '../../npm/@minui/wxc-abnor/dist/index',
+        'wxc-loading': '../../npm/@minui/wxc-loading/dist/index',
+        'wxc-label': '../../npm/@minui/wxc-label/dist/index',
+        'wxc-rate': '../../npm/@minui/wxc-rate/dist/index',
+        'wxc-avatar': '../../npm/@minui/wxc-avatar/dist/index',
+        'wxc-dialog': '../../npm/@minui/wxc-dialog/dist/index',
+      }
+    }
+    components = {
+      CommentItem,
+      BookDetail,
+    }
+
+    data = {
+      isLoading: true,
+      errorRe: false,
+      isInShelf: false,
+      showDialog: false,
+      id: '',
+      title: '',
+      bookInfo: null,
+      staticUrl: 'http://statics.zhuishushenqi.com',
+      shortCommentList: [],
+      commentList: [],
+      bookRecommend: [],
+      bookListRecommend: [],
+      bookShelf: [],
+    }
+    methods = {
+      onAbnorTap: function () {
+        this.getBookInfoById()
+      },
+      addBookToShelf: function () {
+        if(this.bookInfo == null) {
+          return
+        } else {
+          let books = this.bookShelf
+          books.push({
+            _id: this.id,
+            cover: this.bookInfo.cover,
+            title: this.bookInfo.title
+          })
+          this.$parent.globalData.books = books
+          this.$apply()
+          wx.setStorage({
+            key: "shelf",
+            data: books
+          })
+          wx.setStorage({
+            key: "book" + this.id,
+            data: {
+              isInShelf: true,
+              chapterNo: 0
+            }
+          })
+          this.isInShelf = true
+          this.$parent.$pages[`/pages/index`].onLoad();
+        }
+        this.$wxpage.selectComponent('#add_shelf_dialog').hide()
+      },
+      removeBookFromShelf: function () {
+        if(this.bookInfo == null) {
+          return
+        } else {
+          let books = this.bookShelf
+          for(let index in books) {
+            if(books[index]._id == this.id) {
+              books.splice(index, 1)
+            }
+          }
+          this.$parent.globalData.books = books
+          this.$apply()
+          wx.setStorage({
+            key: "shelf",
+            data: books
+          })
+          wx.removeStorageSync("book" + this.id)
+          this.isInShelf = false
+          this.$parent.$pages[`/pages/index`].onLoad();
+        }
+        this.$wxpage.selectComponent('#add_shelf_dialog').hide()
+      },
+      startReadBook: function() {
+        wepy.navigateTo({
+          url: './readBook?id=' + this.id + '&title=' + this.title,
+        })
+      }
+    }
+
+    getBookInfoById() {
+      this.isLoading = true
+      const url = Api.host + Api.noEncode + Api.book.bookInfo + '/' + this.id
+      wepy.request({
+          url: url
+      }).then(res => {
+        if(res.statusCode == 200 ) {
+          this.bookInfo = res.data
+          this.bookInfo.rating.newscore = this.bookInfo.rating.score.toFixed(1)
+          this.bookInfo.rating.newrate = this.bookInfo.rating.score / 2
+          this.bookInfo.allcover = this.staticUrl + this.bookInfo.cover
+          this.isLoading = false
+          this.$apply()
+        } else {
+          this.isLoading = false
+          this.errorRe = true
+          this.$apply()
+        }
+      })
+    }
+
+    getBookCommentById() {
+
+      const url = Api.host + Api.noEncode + Api.comment.bestReviews + encodeURIComponent('?book=' + this.id)
+      wepy.request({
+          url: url
+      }).then(res => {
+        if(res.data.ok ) {
+          this.commentList = res.data.reviews
+          this.$apply()
+        } else {
+          this.isLoading = false
+          this.errorRe = true
+          this.$apply()
+        }
+      })
+    }
+
+    getBookShortCommentById() {
+
+      const url = Api.host + Api.noEncode + Api.comment.shortReviews + encodeURIComponent( '?book=' + this.id
+        + '&limit=3&total=true&sortType=hottest')
+      wepy.request({
+          url: url
+      }).then(res => {
+        if(res.data.ok ) {
+          this.shortCommentList = res.data.docs
+          this.$apply()
+        } else {
+          this.isLoading = false
+          this.errorRe = true
+          this.$apply()
+        }
+      })
+    }
+
+    getBookRecommendById() {
+
+      const url = Api.host + Api.noEncode + Api.book.relatedRecommendedBooks + this.id + encodeURIComponent( '/recommend?limit=3')
+      wepy.request({
+          url: url
+      }).then(res => {
+        if(res.data.ok ) {
+          this.bookRecommend = res.data.books
+          this.$apply()
+        } else {
+          this.isLoading = false
+          this.errorRe = true
+          this.$apply()
+        }
+      })
+    }
+
+    getBookListRecommendById() {
+
+      const url = Api.host + Api.noEncode + Api.bookList.relatedRecommendedBookLists + this.id + encodeURIComponent( '/recommend?limit=3')
+      wepy.request({
+          url: url
+      }).then(res => {
+        if(res.data.ok ) {
+          this.$apply()
+        } else {
+          this.isLoading = false
+          this.errorRe = true
+          this.$apply()
+        }
+      })
+    }
+
+    onLoad(options) {
+      if(options && options.id && options.title) {
+        wepy.setNavigationBarTitle({
+          title: options.title
+        })
+        this.id = options.id
+        this.title = options.title
+      } else {
+        this.id = '55eef8b27445ad27755670b9'
+      }
+      this.bookShelf = this.$parent.globalData.books
+      for(let item of this.bookShelf) {
+        if(item._id == this.id) {
+          this.isInShelf = true
+        }
+      }
+      this.getBookInfoById()
+      this.getBookCommentById()
+      this.getBookShortCommentById()
+      this.getBookRecommendById()
+      this.getBookListRecommendById()
+    }
+  }
+</script>

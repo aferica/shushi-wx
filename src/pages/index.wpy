@@ -1,0 +1,123 @@
+<style lang="less">
+</style>
+<template>
+  <!-- <wxc-loading is-show="{{isLoading}}"></wxc-loading> -->
+  <view class="container">
+    <!-- <wxc-notice scroll="{{true}}" close="{{true}}" bg-color="#e2434b" show-icon="{{true}}" notice="{{notice}}"></wxc-notice> -->
+    <wxc-abnor
+      wx:if="{{books.length == 0}}"
+      type="DATA"
+      title="暂无小说添加到书架"
+      button="去添加"
+      bind:abnortap="onAbnorTap"
+    ></wxc-abnor>
+    <repeat for="{{books}}" index="index" item="item">
+      <BookShelfItem :itemValue.sync="item"></BookShelfItem>
+    </repeat>
+  </view>
+  <wxc-toast id="error_toast" text="更新失败，请重试"></wxc-toast>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import Api from '../util/api.js'
+  import Timeago from 'timeago.js'
+  import BookShelfItem from '../components/BookShelfItem'
+
+  const timeago = Timeago()
+
+  export default class Index extends wepy.page {
+    config = {
+      navigationBarTitleText: '我的书架',
+      usingComponents: {
+        'wxc-list': '../../npm/@minui/wxc-list/dist/index',
+        'wxc-panel': '../../npm/@minui/wxc-panel/dist/index',
+        'wxc-notice': '../../npm/@minui/wxc-notice/dist/index',
+        'wxc-abnor': '../../npm/@minui/wxc-abnor/dist/index',
+        'wxc-toast': '../../npm/@minui/wxc-toast/dist/index'
+      },
+      enablePullDownRefresh: true,
+    }
+    components = {
+      BookShelfItem
+    }
+
+    data = {
+      notice: '本平台不会保存和使用用户的任何信息，因此，在删除书籍或应用后将无法恢复阅读纪录，请谨慎操作',
+      books: [],
+      isLoading: true,
+    }
+    methods = {
+      onAbnorTap: function () {
+        wepy.switchTab({
+          url: 'find'
+        })
+      }
+    }
+
+    updatedBookInfo() {
+      let ids = ''
+      for(let item of this.books) {
+        ids += ',' + item._id
+      }
+      ids = ids.substring(1,ids.length)
+      const url = Api.host + Api.noEncode + Api.book.bookUpdated
+
+      wepy.request({
+        url: url,
+        method: 'POST',
+        data: {
+          id: ids
+        }
+      }).then(res => {
+        console.log(res)
+        if(res.statusCode == 200) {
+          for(let re of res.data) {
+            for(let book of this.books) {
+              if(re._id == book._id) {
+                re.cover = book.cover
+                re.title = book.title
+                re.updateTime = timeago.format(re.updated, 'zh_CN')
+              }
+            }
+          }
+          this.isLoading = false
+          this.books = res.data
+          this.$apply()
+        }
+        wx.stopPullDownRefresh()
+      })
+    }
+
+    getBooksFromShelf(that) {
+      wx.getStorage({
+        key: 'shelf',
+        success: function(res) {
+          console.log(res.data)
+          that.books = res.data
+          that.$parent.globalData.books = res.data
+          that.updatedBookInfo()
+        },
+        fail: function(error) {
+          console.log(error)
+          let $toast = that.$wxpage.selectComponent('#error_toast')
+          $toast && $toast.show()
+          wx.stopPullDownRefresh()
+        }
+      })
+    }
+
+    onPullDownRefresh() {
+      this.getBooksFromShelf(this)
+    }
+
+    onLoad() {
+      if(this.$parent.globalData.books.length == 0) {
+        this.getBooksFromShelf(this)
+      } else {
+        this.books = this.$parent.globalData.books
+        this.updatedBookInfo()
+      }
+    }
+  }
+</script>
